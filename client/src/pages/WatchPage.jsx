@@ -1,9 +1,8 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { api, backdropUrl } from "../api.js";
 import { useConfig } from "../context/ConfigContext.jsx";
-import { buildCinesrcUrl } from "../lib/cinesrc.js";
-import CinesrcPlayer from "../components/CinesrcPlayer.jsx";
+import EmbedPlayer from "../components/EmbedPlayer.jsx";
 import LocalPlayer from "../components/LocalPlayer.jsx";
 
 export default function WatchPage() {
@@ -67,16 +66,6 @@ export default function WatchPage() {
     };
   }, [title, key, season]);
 
-  const playerUrl = useMemo(() => {
-    if (!title || title.local || title.media_type === "tv") return null;
-    return buildCinesrcUrl(title, { cinesrc, startTime });
-  }, [title, cinesrc, startTime]);
-
-  const tvUrl = useMemo(() => {
-    if (!title || title.local || title.media_type !== "tv") return null;
-    return buildCinesrcUrl(title, { cinesrc, season, episode, startTime });
-  }, [title, cinesrc, season, episode, startTime]);
-
   const handleProgress = async (data) => {
     if (!title || !data) return;
     try {
@@ -134,17 +123,24 @@ export default function WatchPage() {
         </h1>
       </div>
 
-      <div className="relative aspect-video w-full max-h-[80vh] shrink-0 bg-black">
+      <div className="w-full shrink-0 bg-black">
         {title.local ? (
-          <LocalPlayer
-            src={title.local.url}
-            kind={isLocalAudio ? "audio" : "video"}
-            onProgress={handleProgress}
-          />
-        ) : title.media_type === "tv" ? (
-          tvUrl && <CinesrcPlayer url={tvUrl} onProgress={handleProgress} />
+          <div className="relative aspect-video max-h-[80vh]">
+            <LocalPlayer
+              src={title.local.url}
+              kind={isLocalAudio ? "audio" : "video"}
+              onProgress={handleProgress}
+            />
+          </div>
         ) : (
-          playerUrl && <CinesrcPlayer url={playerUrl} onProgress={handleProgress} />
+          <EmbedPlayer
+            title={title}
+            season={season}
+            episode={episode}
+            cinesrc={cinesrc}
+            onProgress={handleProgress}
+            onNextEpisode={({ season: s, episode: e }) => goToEpisode(s, e)}
+          />
         )}
       </div>
 
