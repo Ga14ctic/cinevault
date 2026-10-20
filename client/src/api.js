@@ -46,6 +46,10 @@ export const api = {
     request("/api/progress", { method: "PUT", headers: JSON_HEADERS, body: JSON.stringify(body) }),
   removeProgress: (key) =>
     request(`/api/progress/${encodeURIComponent(key)}`, { method: "DELETE" }),
+  streams: (key, season, episode) => {
+    const qs = season !== undefined ? `?season=${season}&episode=${episode}` : "";
+    return request(`/api/streams/${encodeURIComponent(key)}${qs}`);
+  },
 };
 
 export function posterUrl(path) {

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { api, backdropUrl } from "../api.js";
 import { useConfig } from "../context/ConfigContext.jsx";
-import EmbedPlayer from "../components/EmbedPlayer.jsx";
+import StreamPlayer from "../components/StreamPlayer.jsx";
 import LocalPlayer from "../components/LocalPlayer.jsx";
 
 export default function WatchPage() {
@@ -133,10 +133,11 @@ export default function WatchPage() {
             />
           </div>
         ) : (
-          <EmbedPlayer
+          <StreamPlayer
             title={title}
             season={season}
             episode={episode}
+            startTime={startTime}
             cinesrc={cinesrc}
             onProgress={handleProgress}
             onNextEpisode={({ season: s, episode: e }) => goToEpisode(s, e)}

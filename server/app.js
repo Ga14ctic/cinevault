@@ -12,6 +12,7 @@ import authRoutes from "./routes/auth.js";
 import libraryRoutes from "./routes/library.js";
 import configRoutes from "./routes/config.js";
 import progressRoutes from "./routes/progress.js";
+import streamsRoutes, { embedProxyRouter } from "./routes/streams.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const distDir = path.resolve(__dirname, "../client/dist");
@@ -43,8 +44,8 @@ export function createApp() {
             "https://vidfast.pro",
             "https://2embed.cc",
           ],
-          mediaSrc: ["'self'", "blob:"],
-          connectSrc: ["'self'"],
+          mediaSrc: ["'self'", "blob:", "data:"],
+          connectSrc: ["'self'", "blob:"],
           frameAncestors: ["'self'"],
           objectSrc: ["'none'"],
           baseUri: ["'self'"],
@@ -82,6 +83,9 @@ export function createApp() {
   app.use("/api", configRoutes);
   app.use("/api", progressRoutes);
   app.use("/api", libraryRoutes);
+  app.use("/api", streamsRoutes);
+
+  app.use("/embed-proxy", embedProxyRouter());
 
   app.use("/images", express.static(path.join(__dirname, "../data/images"), {
     maxAge: "30d",

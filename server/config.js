@@ -36,6 +36,9 @@ export const config = {
   // Extra hostnames/IPs to include in the self-signed cert's SAN
   // (comma-separated). LAN IPs are auto-detected; add a hostname here too.
   httpsHosts: (process.env.HTTPS_HOSTS || "").split(",").map((s) => s.trim()).filter(Boolean),
+  // Internal URL of the tmdb-embed-api stream aggregator (compose service).
+  // When empty, remote playback falls back to the iframe embed providers.
+  embedApiUrl: process.env.EMBED_API_URL || null,
 };
 
 if (!config.rootPass) {
