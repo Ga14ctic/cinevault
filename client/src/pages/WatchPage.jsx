@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { api, backdropUrl } from "../api.js";
-import { useConfig } from "../context/ConfigContext.jsx";
 import StreamPlayer from "../components/StreamPlayer.jsx";
 import LocalPlayer from "../components/LocalPlayer.jsx";
 
@@ -9,7 +8,6 @@ export default function WatchPage() {
   const { key } = useParams();
   const [params, setParams] = useSearchParams();
   const navigate = useNavigate();
-  const { cinesrc } = useConfig();
 
   const season = Number(params.get("s") || 1);
   const episode = Number(params.get("e") || 1);
@@ -138,9 +136,7 @@ export default function WatchPage() {
             season={season}
             episode={episode}
             startTime={startTime}
-            cinesrc={cinesrc}
             onProgress={handleProgress}
-            onNextEpisode={({ season: s, episode: e }) => goToEpisode(s, e)}
           />
         )}
       </div>

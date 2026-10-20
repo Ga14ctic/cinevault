@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { api } from "../api.js";
 import DirectPlayer from "./DirectPlayer.jsx";
-import EmbedPlayer from "./EmbedPlayer.jsx";
 
 // Quality rank for default ordering (higher = preferred).
 function qRank(q) {
@@ -31,16 +30,25 @@ function label(s) {
   return [s.provider, q].filter(Boolean).join(" · ") || s.name || "Source";
 }
 
+function Notice({ title, body }) {
+  return (
+    <div className="flex aspect-video max-h-[80vh] w-full flex-col items-center justify-center gap-2 bg-black px-6 text-center">
+      <p className="text-lg font-semibold text-white">{title}</p>
+      <p className="max-w-md text-sm text-neutral-400">{body}</p>
+    </div>
+  );
+}
+
 // Handles stream selection, automatic failover, and the source switcher.
-// Falls back to the iframe EmbedPlayer when the aggregator has nothing.
+// Playback is direct-only (no iframe providers): titles with no source show a
+// notice rather than routing through an ad-bearing embed page.
 export function StreamPlayer({
   title,
   season,
   episode,
   startTime,
-  cinesrc,
   onProgress,
-  onNextEpisode,
+  onNextEpisode: _onNextEpisode,
 }) {
   const key = title?.key;
   const [streams, setStreams] = useState(null); // null=loading, []=none
@@ -80,16 +88,11 @@ export function StreamPlayer({
     });
   };
 
-  // Aggregator not configured → straight to iframe providers.
   if (aggMissing) {
     return (
-      <EmbedPlayer
-        title={title}
-        season={season}
-        episode={episode}
-        cinesrc={cinesrc}
-        onProgress={onProgress}
-        onNextEpisode={onNextEpisode}
+      <Notice
+        title="Playback service unavailable"
+        body="The stream aggregator isn't running. Ask the household admin to start the embed-api service."
       />
     );
   }
@@ -102,16 +105,11 @@ export function StreamPlayer({
     );
   }
 
-  // No direct streams → fall back to iframe providers.
   if (streams.length === 0) {
     return (
-      <EmbedPlayer
-        title={title}
-        season={season}
-        episode={episode}
-        cinesrc={cinesrc}
-        onProgress={onProgress}
-        onNextEpisode={onNextEpisode}
+      <Notice
+        title="No source available"
+        body="We couldn't find a playable stream for this title right now. Try again later, or pick a different title."
       />
     );
   }
