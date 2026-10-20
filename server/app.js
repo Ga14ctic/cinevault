@@ -7,6 +7,8 @@ import { fileURLToPath } from "node:url";
 import { config } from "./config.js";
 import { logger } from "./logger.js";
 import { col } from "./db.js";
+import { loadSession } from "./middleware.js";
+import authRoutes from "./routes/auth.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const distDir = path.resolve(__dirname, "../client/dist");
@@ -46,6 +48,7 @@ export function createApp() {
   );
 
   app.use(express.json({ limit: "1mb" }));
+  app.use(loadSession);
 
   app.get("/api/health", async (_req, res) => {
     let mongo = "down";
@@ -65,6 +68,8 @@ export function createApp() {
       uptime: Math.round(process.uptime()),
     });
   });
+
+  app.use("/api/auth", authRoutes);
 
   app.use("/media", (req, res, next) => {
     if (!req.session) return res.status(401).json({ error: { code: "UNAUTHORIZED", message: "Login required" } });

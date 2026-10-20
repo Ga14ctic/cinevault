@@ -2,9 +2,21 @@ import { config } from "./config.js";
 import { logger } from "./logger.js";
 import { connectDb, closeDb } from "./db.js";
 import { createApp } from "./app.js";
+import { ensureIndexes, seedRootUser } from "./auth.js";
 
 async function main() {
   await connectDb();
+  await ensureIndexes();
+  const seeded = await seedRootUser();
+  if (seeded.seeded) {
+    logger.info(
+      { user: config.rootUser, generated: seeded.generated },
+      seeded.generated
+        ? "root user created (generated password — see warning below)"
+        : "root user created from env credentials"
+    );
+  }
+
   const app = createApp();
 
   const server = app.listen(config.port, "0.0.0.0", () => {
