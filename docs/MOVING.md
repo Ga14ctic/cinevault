@@ -100,6 +100,27 @@ certificate warning. (The redirect also listens on port **8080**, so
 > `/data/tls/cert.pem` inside the app container
 > (`docker compose cp app:/data/tls/cert.pem ./cinevault.crt`).
 
+## Playback aggregator (embed-api)
+
+Remote playback is powered by a self-hosted stream aggregator
+(`inside4ndroid/tmdb-embed-api`), defined as the `embed-api` service in
+`docker-compose.yml`. It queries ~13 providers and returns **direct** HLS/MP4
+URLs, which the app plays in its own `<video>` element (no iframes, no
+third-party frame blocks). CineVault proxies those streams back through
+`/embed-proxy/*`.
+
+Requirements:
+- The `embed-api` service must be present and the app must have
+  `EMBED_API_URL=http://embed-api:8787` (already set in `docker-compose.yml`).
+- `TMDB_API_KEY` must be set in `.env` — the aggregator uses it to resolve
+  titles. Same key the app already uses.
+- On first boot the aggregator creates `utils/auth-users.json` with
+  `admin` / `change-me`. It is **internal only** (no published port); you only
+  need those credentials if you want to open its admin panel.
+
+If the aggregator is missing or returns nothing for a title, the player
+automatically falls back to the iframe embed providers (CineSrc / VidLink).
+
 ## Notes
 
 - **Never commit** `.env`, `data/images/`, or the Docker volumes — they're gitignored.
