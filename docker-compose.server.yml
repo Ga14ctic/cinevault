@@ -1,36 +1,21 @@
-# Server-only override: adds HTTPS via Caddy + Let's Encrypt (Cloudflare
-# DNS-01). NOT used on the dev machine.
+# Server-only override: enables HTTPS with a self-signed cert (LAN use).
+# NOT used on the dev machine.
 #
 # Usage on the server (laptop):
 #   docker compose -f docker-compose.yml -f docker-compose.server.yml up --build -d
 #
-# Requires in .env:
-#   SITE_DOMAIN   e.g. home.switchyard.uk
-#   ACME_EMAIL    e.g. you@switchyard.uk
-#   CF_API_TOKEN  Cloudflare token with Zone:DNS:Edit on switchyard.uk
+# Then browse to https://<laptop-LAN-IP>:6767 and click through the one-time
+# "not private" warning. Everything after that is HTTPS — no more blank pages
+# from browsers force-upgrading insecure origins.
 #
-# Point a DNS-only (grey cloud) A record for SITE_DOMAIN at the laptop's
-# LAN IP (e.g. 192.168.1.235).
+# A plain-HTTP port (8080) redirects to HTTPS, so typing the bare host works.
 
 services:
   app:
     ports:
-      - "127.0.0.1:6767:6767"
-
-  caddy:
-    image: caddy:2-alpine
-    ports:
-      - "80:80"
-      - "443:443"
-    env_file: .env
-    volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile:ro
-      - caddy_data:/data
-      - caddy_config:/config
-    depends_on:
-      - app
-    restart: unless-stopped
-
-volumes:
-  caddy_data:
-  caddy_config:
+      - "6767:6767"
+      - "8080:8080"
+    environment:
+      HTTPS: "1"
+      HTTPS_PORT: "6767"
+      HTTP_PORT: "8080"

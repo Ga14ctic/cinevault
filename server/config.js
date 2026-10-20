@@ -27,6 +27,15 @@ export const config = {
   isProd: process.env.NODE_ENV === "production",
   trustProxy: bool("TRUST_PROXY", false),
   csrfSecret: randomBytes(32).toString("hex"),
+  // HTTPS: set HTTPS=1 to serve TLS with a self-signed cert (LAN use).
+  https: bool("HTTPS", false),
+  httpsPort: Number(process.env.HTTPS_PORT || process.env.PORT || 6767),
+  // Plain HTTP port to redirect to HTTPS (or serve on, if https disabled).
+  httpPort: Number(process.env.HTTP_PORT || process.env.PORT || 6767),
+  dataDir: process.env.DATA_DIR || null,
+  // Extra hostnames/IPs to include in the self-signed cert's SAN
+  // (comma-separated). LAN IPs are auto-detected; add a hostname here too.
+  httpsHosts: (process.env.HTTPS_HOSTS || "").split(",").map((s) => s.trim()).filter(Boolean),
 };
 
 if (!config.rootPass) {

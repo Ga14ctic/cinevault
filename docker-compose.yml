@@ -1,14 +1,20 @@
 services:
   app:
     build: .
+    # Run as root so writes to the named volumes (uploads, TLS certs) work.
+    # Named volumes are root-owned by default; the image's `node` user can't
+    # write to them. Fine for a LAN container.
+    user: "0:0"
     ports:
       - "6767:6767"
     env_file: .env
     environment:
       MONGO_URL: mongodb://mongo:27017
       MEDIA_DIR: /data/media
+      DATA_DIR: /data
     volumes:
       - media_data:/data/media
+      - tls_data:/data/tls
       - ./data:/app/data:ro
     depends_on:
       mongo:
@@ -41,3 +47,4 @@ services:
 volumes:
   media_data:
   mongo_data:
+  tls_data:

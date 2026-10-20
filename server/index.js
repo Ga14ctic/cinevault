@@ -1,9 +1,18 @@
+import http from "node:http";
+import https from "node:https";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { config } from "./config.js";
 import { logger } from "./logger.js";
 import { connectDb, closeDb } from "./db.js";
 import { createApp } from "./app.js";
 import { ensureIndexes, seedRootUser } from "./auth.js";
 import { ensureTitleIndexes, importCatalogIfEmpty, ensurePrefs } from "./catalog.js";
+import { ensureSelfSignedCert } from "./tls.js";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const ROOT = path.resolve(__dirname, "..");
+const DATA_DIR = config.dataDir || path.join(ROOT, "data");
 
 async function main() {
   await connectDb();
@@ -27,22 +36,55 @@ async function main() {
     logger.info({ titles: importResult.count }, "library seeded from catalog.json");
   }
 
-  const server = app.listen(config.port, "0.0.0.0", () => {
-    logger.info(`cinevault listening on :${config.port}`);
-    if (config.rootPassGenerated) {
-      logger.warn(
-        { user: config.rootUser },
-        `generated root password (set ROOT_PASS in .env to choose your own): ${config.rootPass}`
-      );
+  const servers = [];
+
+  if (config.https) {
+    const { key, cert } = await ensureSelfSignedCert(DATA_DIR, config.httpsHosts);
+    const httpsServer = https.createServer({ key, cert }, app);
+    httpsServer.listen(config.httpsPort, "0.0.0.0", () => {
+      logger.info(`cinevault listening on https://0.0.0.0:${config.httpsPort} (self-signed)`);
+    });
+    servers.push(httpsServer);
+
+    // Plain HTTP port redirects everything to HTTPS so browsers never sit on
+    // the insecure origin (which triggers upgrade/HSTS weirdness).
+    if (config.httpPort && config.httpPort !== config.httpsPort) {
+      const redirect = http.createServer((req, res) => {
+        const host = (req.headers.host || "").replace(/:\d+$/, "");
+        const location = `https://${host}:${config.httpsPort}${req.url || "/"}`;
+        res.writeHead(301, { Location: location });
+        res.end();
+      });
+      redirect.listen(config.httpPort, "0.0.0.0", () => {
+        logger.info(`http → https redirect listening on :${config.httpPort}`);
+      });
+      servers.push(redirect);
     }
-  });
+  } else {
+    const server = app.listen(config.httpPort, "0.0.0.0", () => {
+      logger.info(`cinevault listening on :${config.httpPort}`);
+    });
+    servers.push(server);
+  }
+
+  if (config.rootPassGenerated) {
+    logger.warn(
+      { user: config.rootUser },
+      `generated root password (set ROOT_PASS in .env to choose your own): ${config.rootPass}`
+    );
+  }
 
   const shutdown = async (signal) => {
     logger.info({ signal }, "shutting down");
-    server.close(async () => {
-      await closeDb();
-      process.exit(0);
-    });
+    let remaining = servers.length;
+    for (const s of servers) {
+      s.close(async () => {
+        if (--remaining === 0) {
+          await closeDb();
+          process.exit(0);
+        }
+      });
+    }
     setTimeout(() => process.exit(1), 8000).unref();
   };
   process.on("SIGTERM", () => shutdown("SIGTERM"));
