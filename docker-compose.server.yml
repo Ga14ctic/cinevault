@@ -8,14 +8,15 @@
 # "not private" warning. Everything after that is HTTPS — no more blank pages
 # from browsers force-upgrading insecure origins.
 #
-# A plain-HTTP port (8080) redirects to HTTPS, so typing the bare host works.
+# Optional plain-HTTP redirect: uncomment the 8080 lines below to also forward
+# http://<ip>:8080 → https://<ip>:6767 (pick a port that's actually free).
 
 services:
   app:
     ports:
       - "6767:6767"
-      - "8080:8080"
+      # - "8080:8080"     # optional HTTP→HTTPS redirect port
     environment:
       HTTPS: "1"
       HTTPS_PORT: "6767"
-      HTTP_PORT: "8080"
+      # HTTP_PORT: "8080"  # set only if you enable the redirect port above

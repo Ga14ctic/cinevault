@@ -41,19 +41,35 @@ async function main() {
   if (config.https) {
     const { key, cert } = await ensureSelfSignedCert(DATA_DIR, config.httpsHosts);
     const httpsServer = https.createServer({ key, cert }, app);
+    httpsServer.on("error", (err) => {
+      logger.error(
+        { port: config.httpsPort, code: err.code },
+        err.code === "EADDRINUSE"
+          ? `HTTPS port ${config.httpsPort} is already in use — set HTTPS_PORT (and the compose mapping) to a free port`
+          : "HTTPS server error"
+      );
+      process.exit(1);
+    });
     httpsServer.listen(config.httpsPort, "0.0.0.0", () => {
       logger.info(`cinevault listening on https://0.0.0.0:${config.httpsPort} (self-signed)`);
     });
     servers.push(httpsServer);
 
     // Plain HTTP port redirects everything to HTTPS so browsers never sit on
-    // the insecure origin (which triggers upgrade/HSTS weirdness).
+    // the insecure origin (which triggers upgrade/HSTS weirdness). Optional:
+    // if the port is busy we log and continue rather than crash.
     if (config.httpPort && config.httpPort !== config.httpsPort) {
       const redirect = http.createServer((req, res) => {
         const host = (req.headers.host || "").replace(/:\d+$/, "");
         const location = `https://${host}:${config.httpsPort}${req.url || "/"}`;
         res.writeHead(301, { Location: location });
         res.end();
+      });
+      redirect.on("error", (err) => {
+        logger.warn(
+          { port: config.httpPort, code: err.code },
+          "http→https redirect port unavailable; continuing without it"
+        );
       });
       redirect.listen(config.httpPort, "0.0.0.0", () => {
         logger.info(`http → https redirect listening on :${config.httpPort}`);
