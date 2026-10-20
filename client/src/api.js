@@ -35,6 +35,17 @@ export const api = {
   },
   title: (key) => request(`/api/titles/${encodeURIComponent(key)}`),
   genres: () => request("/api/genres"),
+  config: () => request("/api/config"),
+  tvEpisodes: (key) => request(`/api/tv/${encodeURIComponent(key)}/episodes`),
+  tvSeason: (key, season) => request(`/api/tv/${encodeURIComponent(key)}/season/${season}`),
+  progressItem: (key, season, episode) => {
+    const qs = season !== undefined ? `?season=${season}&episode=${episode}` : "";
+    return request(`/api/progress/${encodeURIComponent(key)}${qs}`);
+  },
+  saveProgress: (body) =>
+    request("/api/progress", { method: "PUT", headers: JSON_HEADERS, body: JSON.stringify(body) }),
+  removeProgress: (key) =>
+    request(`/api/progress/${encodeURIComponent(key)}`, { method: "DELETE" }),
 };
 
 export function posterUrl(path) {

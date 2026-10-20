@@ -2,6 +2,7 @@ import express from "express";
 import { col } from "../db.js";
 import { requireAuth } from "../middleware.js";
 import { capsFilterFor, mergeFilter } from "../caps.js";
+import { getTvDetails, getSeasonDetails } from "../tmdb.js";
 
 const router = express.Router();
 
@@ -191,6 +192,41 @@ router.get("/titles/:key", requireAuth, async (req, res) => {
   }
   const local = title.local ? { ...title.local, url: `/media/${title.local.filename}` } : null;
   res.json({ title: { ...title, _id: undefined, local } });
+});
+
+router.get("/tv/:key/episodes", requireAuth, async (req, res) => {
+  const merged = mergeFilter({ key: req.params.key }, capsFilterFor(req.user));
+  const title = await col("titles").findOne(merged, { projection: { media_type: 1, tmdb_id: 1 } });
+  if (!title || title.media_type !== "tv" || !title.tmdb_id) {
+    return res.status(404).json({ error: { code: "NOT_FOUND", message: "TV title not found" } });
+  }
+  try {
+    const details = await getTvDetails(title.tmdb_id);
+    res.json(details);
+  } catch (err) {
+    res.status(err.status === 503 ? 503 : 502).json({
+      error: { code: err.code || "TMDB_ERROR", message: "Could not load episode data" },
+    });
+  }
+});
+
+router.get("/tv/:key/season/:season", requireAuth, async (req, res) => {
+  const merged = mergeFilter({ key: req.params.key }, capsFilterFor(req.user));
+  const title = await col("titles").findOne(merged, { projection: { media_type: 1, tmdb_id: 1 } });
+  if (!title || title.media_type !== "tv" || !title.tmdb_id) {
+    return res.status(404).json({ error: { code: "NOT_FOUND", message: "TV title not found" } });
+  }
+  const season = Number(req.params.season);
+  if (!Number.isInteger(season) || season < 1) {
+    return res.status(400).json({ error: { code: "BAD_REQUEST", message: "Invalid season" } });
+  }
+  try {
+    res.json(await getSeasonDetails(title.tmdb_id, season));
+  } catch (err) {
+    res.status(err.status === 503 ? 503 : 502).json({
+      error: { code: err.code || "TMDB_ERROR", message: "Could not load season data" },
+    });
+  }
 });
 
 router.get("/genres", requireAuth, async (req, res) => {

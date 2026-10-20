@@ -103,9 +103,8 @@ function discoverUrl(type, sort, page, extra = {}) {
   return `${base}?${params.toString()}`;
 }
 
-async function collectPages(type, sort, pages, extra, seen, bucket, cap) {
+async function collectPages(type, sort, pages, extra, seen, bucket) {
   for (let page = 1; page <= pages; page++) {
-    if (bucket.size >= cap) return;
     let data;
     try {
       data = await tmdb(discoverUrl(type, sort, page, extra));
@@ -132,14 +131,14 @@ async function buildBucket(type, genreMap, target) {
 
   // 1) Deep popularity (mainstream + mid-tier, but recency-biased)
   const popPages = Math.ceil((target / 20) * 1.6);
-  await collectPages(type, "popularity.desc", popPages, {}, seen, bucket, target);
+  await collectPages(type, "popularity.desc", popPages, {}, seen, bucket);
   log("popularity");
 
   // 1b) Most-voted (rank by TOTAL number of ratings) — the best proxy for
   // "widely watched", catches beloved-but-not-trending films (Anchorman,
   // Borat, Zoolander, The Dictator) that popularity.desc skips.
   const votePages = Math.ceil((target / 20) * 1.2);
-  await collectPages(type, "vote_count.desc", votePages, {}, seen, bucket, target);
+  await collectPages(type, "vote_count.desc", votePages, {}, seen, bucket);
   log("most-voted");
 
   // 2) Top-rated with vote floor (critically loved, not trending)
@@ -150,8 +149,7 @@ async function buildBucket(type, genreMap, target) {
     ratePages,
     { "vote_count.gte": "500" },
     seen,
-    bucket,
-    target
+    bucket
   );
   log("top-rated");
 
@@ -161,7 +159,7 @@ async function buildBucket(type, genreMap, target) {
       type === "movie"
         ? { "primary_release_date.gte": d.gte, "primary_release_date.lte": d.lte }
         : { "first_air_date.gte": d.gte, "first_air_date.lte": d.lte };
-    await collectPages(type, "popularity.desc", Math.ceil(target / 100), extra, seen, bucket, target);
+    await collectPages(type, "popularity.desc", Math.ceil(target / 100), extra, seen, bucket);
     log(d.label);
   }
 
@@ -175,14 +173,23 @@ async function buildBucket(type, genreMap, target) {
       perGenrePages,
       { with_genres: String(gid) },
       seen,
-      bucket,
-      target
+      bucket
     );
   }
   log("genres");
 
   process.stdout.write("\n");
-  return [...bucket.values()].slice(0, target);
+
+  // Rank the merged pool and keep the best `target`. Score rewards titles
+  // many people have rated (vote_count) with a popularity nudge, so the cap
+  // trims obscure entries rather than widely-watched ones.
+  const scored = [...bucket.values()].map((r) => {
+    const votes = r.vote_count || 0;
+    const pop = r.popularity || 0;
+    return { r, score: Math.log10(votes + 1) * 100 + pop };
+  });
+  scored.sort((a, b) => b.score - a.score);
+  return scored.slice(0, target).map((s) => s.r);
 }
 
 async function movieCertification(id) {

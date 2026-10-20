@@ -69,6 +69,43 @@ docker compose up -d
 
 If you skip this, the new machine starts with a fresh database (just the root account + the full catalog) — completely fine for a clean install.
 
+## HTTPS on the server (home.switchyard.uk)
+
+Plain HTTP on a LAN IP triggers browser HTTPS-upgrade errors on some devices
+(white screen, `ERR_SSL_PROTOCOL_ERROR`). Fix it properly by serving HTTPS with
+a **real Let's Encrypt certificate** via Caddy — no warnings, works on every
+device in the house.
+
+**How it works:** a DNS-only (grey cloud) `A` record points the subdomain at the
+laptop's LAN IP, and Caddy proves domain ownership with the **Cloudflare DNS-01
+challenge** — so no inbound ports are opened and it stays LAN-only.
+
+### One-time Cloudflare setup
+1. DNS → add an `A` record: `home` (or your subdomain) → the **laptop's LAN IP**
+   (e.g. `192.168.1.235`), **proxy status: DNS only (grey cloud)**.
+2. My Profile → API Tokens → Create Token → **Edit zone DNS** template →
+   scope to the `switchyard.uk` zone → copy the token.
+
+### One-time laptop setup
+Add to `.env`:
+```bash
+SITE_DOMAIN=home.switchyard.uk
+ACME_EMAIL=you@switchyard.uk
+CF_API_TOKEN=<the token from step 2>
+```
+
+### Start the server stack
+Use the server override (adds Caddy + HTTPS; the dev machine never uses it):
+```bash
+docker compose -f docker-compose.yml -f docker-compose.server.yml up --build -d
+```
+
+First boot takes ~30s while Caddy obtains the cert. Then browse to
+**https://home.switchyard.uk** — valid cert, no warnings, on every device.
+
+> If the cert fails, check `docker compose logs caddy`. Most common cause: the
+> API token lacks `Zone:DNS:Edit`, or the DNS record is orange-cloud (proxied).
+
 ## Notes
 
 - **Never commit** `.env`, `data/images/`, or the Docker volumes — they're gitignored.

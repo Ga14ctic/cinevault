@@ -1,0 +1,36 @@
+# Caddyfile — HTTPS reverse proxy for CineVault (server-only).
+#
+# TLS via Let's Encrypt using the Cloudflare DNS-01 challenge — no inbound
+# ports required, so it works on a LAN-only host.
+#
+# Requires env vars (see .env.example):
+#   SITE_DOMAIN   e.g. home.switchyard.uk
+#   ACME_EMAIL    e.g. you@switchyard.uk
+#   CF_API_TOKEN  Cloudflare API token with Zone:DNS:Edit
+
+{
+	email {$ACME_EMAIL}
+	storage /data
+}
+
+{$SITE_DOMAIN} {
+	encode zstd gzip
+
+	reverse_proxy app:6767
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+	}
+
+	log {
+		output stdout
+		format console
+	}
+
+	tls {
+		dns cloudflare {$CF_API_TOKEN}
+		resolvers 1.1.1.1
+	}
+}

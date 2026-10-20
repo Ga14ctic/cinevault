@@ -10,6 +10,8 @@ import { col } from "./db.js";
 import { loadSession } from "./middleware.js";
 import authRoutes from "./routes/auth.js";
 import libraryRoutes from "./routes/library.js";
+import configRoutes from "./routes/config.js";
+import progressRoutes from "./routes/progress.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const distDir = path.resolve(__dirname, "../client/dist");
@@ -71,6 +73,8 @@ export function createApp() {
   });
 
   app.use("/api/auth", authRoutes);
+  app.use("/api", configRoutes);
+  app.use("/api", progressRoutes);
   app.use("/api", libraryRoutes);
 
   app.use("/images", express.static(path.join(__dirname, "../data/images"), {

@@ -1,0 +1,36 @@
+# Server-only override: adds HTTPS via Caddy + Let's Encrypt (Cloudflare
+# DNS-01). NOT used on the dev machine.
+#
+# Usage on the server (laptop):
+#   docker compose -f docker-compose.yml -f docker-compose.server.yml up --build -d
+#
+# Requires in .env:
+#   SITE_DOMAIN   e.g. home.switchyard.uk
+#   ACME_EMAIL    e.g. you@switchyard.uk
+#   CF_API_TOKEN  Cloudflare token with Zone:DNS:Edit on switchyard.uk
+#
+# Point a DNS-only (grey cloud) A record for SITE_DOMAIN at the laptop's
+# LAN IP (e.g. 192.168.1.235).
+
+services:
+  app:
+    ports:
+      - "127.0.0.1:6767:6767"
+
+  caddy:
+    image: caddy:2-alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    env_file: .env
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - app
+    restart: unless-stopped
+
+volumes:
+  caddy_data:
+  caddy_config:
