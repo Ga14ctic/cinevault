@@ -14,6 +14,10 @@ export function normalizeUsername(name) {
   return String(name || "").trim().toLowerCase();
 }
 
+export function validateUsername(name) {
+  return typeof name === "string" && USERNAME_RE.test(name);
+}
+
 export function hashPassword(password) {
   return bcrypt.hash(password, BCRYPT_COST);
 }

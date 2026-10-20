@@ -7,6 +7,7 @@ import SearchPage from "./pages/SearchPage.jsx";
 import BrowsePage from "./pages/BrowsePage.jsx";
 import TitlePage from "./pages/TitlePage.jsx";
 import WatchPage from "./pages/WatchPage.jsx";
+import AdminPage from "./pages/AdminPage.jsx";
 
 function Protected({ children }) {
   const { user, loading } = useAuth();
@@ -32,6 +33,7 @@ export default function App() {
                 <Route path="/browse" element={<BrowsePage />} />
                 <Route path="/title/:key" element={<TitlePage />} />
                 <Route path="/watch/:key" element={<WatchPage />} />
+                <Route path="/admin" element={<AdminPage />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </div>

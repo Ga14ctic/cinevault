@@ -13,6 +13,7 @@ import libraryRoutes from "./routes/library.js";
 import configRoutes from "./routes/config.js";
 import progressRoutes from "./routes/progress.js";
 import streamsRoutes, { embedProxyRouter } from "./routes/streams.js";
+import adminRoutes from "./routes/admin.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const distDir = path.resolve(__dirname, "../client/dist");
@@ -84,6 +85,7 @@ export function createApp() {
   app.use("/api", progressRoutes);
   app.use("/api", libraryRoutes);
   app.use("/api", streamsRoutes);
+  app.use("/api", adminRoutes);
 
   app.use("/embed-proxy", embedProxyRouter());
 

@@ -50,6 +50,18 @@ export const api = {
     const qs = season !== undefined ? `?season=${season}&episode=${episode}` : "";
     return request(`/api/streams/${encodeURIComponent(key)}${qs}`);
   },
+
+  adminUsers: () => request("/api/admin/users"),
+  adminCreateUser: (body) =>
+    request("/api/admin/users", { method: "POST", headers: JSON_HEADERS, body: JSON.stringify(body) }),
+  adminUpdateUser: (id, body) =>
+    request(`/api/admin/users/${id}`, { method: "PATCH", headers: JSON_HEADERS, body: JSON.stringify(body) }),
+  adminDeleteUser: (id) => request(`/api/admin/users/${id}`, { method: "DELETE" }),
+  adminRevokeSessions: (id) => request(`/api/admin/users/${id}/revoke-sessions`, { method: "POST" }),
+  adminPrefs: () => request("/api/admin/prefs"),
+  adminSavePrefs: (body) =>
+    request("/api/admin/prefs", { method: "PUT", headers: JSON_HEADERS, body: JSON.stringify(body) }),
+  adminStatus: () => request("/api/admin/status"),
 };
 
 export function posterUrl(path) {
