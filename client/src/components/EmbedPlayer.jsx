@@ -58,15 +58,19 @@ export default function EmbedPlayer({ title, season, episode, cinesrc, onProgres
     return () => window.removeEventListener("message", handleMessage);
   }, [onProgress, onNextEpisode]);
 
-  // Fall back to the error overlay if a provider never reports readiness.
-  useEffect(() => {
-    if (status !== "loading") return;
-    const t = setTimeout(() => setStatus((s) => (s === "loading" ? "slow" : s)), 12000);
-    return () => clearTimeout(t);
-  }, [status, retryKey]);
-
   const provider = providerById(providerId);
   const url = provider.buildUrl({ tmdbId, mediaType, season, episode, cinesrc });
+
+  // Only cinesrc reports readiness back to us. The others load silently inside
+  // their iframe, so we can't tell "still buffering" from "ready" — never cover
+  // the video for those. Cinesrc gets a timeout; the rest just show a hint.
+  const reporting = provider.postMessage === true;
+
+  useEffect(() => {
+    if (!reporting || status !== "loading") return;
+    const t = setTimeout(() => setStatus((s) => (s === "loading" ? "error" : s)), 20000);
+    return () => clearTimeout(t);
+  }, [reporting, status, retryKey]);
 
   const retry = useCallback(() => {
     setStatus("loading");
@@ -99,11 +103,9 @@ export default function EmbedPlayer({ title, season, episode, cinesrc, onProgres
             <div className="h-10 w-10 animate-spin rounded-full border-2 border-white/30 border-t-white" />
           </div>
         )}
-        {(status === "error" || status === "slow") && (
+        {status === "error" && (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black/95 text-center">
-            <p className="text-lg text-neutral-200">
-              {status === "error" ? "Stream unavailable" : "This server is slow"}
-            </p>
+            <p className="text-lg text-neutral-200">Stream unavailable</p>
             <p className="max-w-sm text-sm text-neutral-500">
               Try another server below, or retry.
             </p>

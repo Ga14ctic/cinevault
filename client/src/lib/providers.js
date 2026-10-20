@@ -46,26 +46,25 @@ export const PROVIDERS = [
         : `https://vidlink.pro/movie/${tmdbId}`;
     },
   },
-  {
-    id: "vidfast",
-    label: "VidFast",
-    buildUrl: ({ tmdbId, mediaType, season, episode }) => {
-      if (!tmdbId) return null;
-      return mediaType === "tv"
-        ? `https://vidfast.pro/tv/${tmdbId}/${season ?? 1}/${episode ?? 1}`
-        : `https://vidfast.pro/movie/${tmdbId}`;
-    },
-  },
-  {
-    id: "2embed",
-    label: "2Embed",
-    buildUrl: ({ tmdbId, mediaType, season, episode }) => {
-      if (!tmdbId) return null;
-      return mediaType === "tv"
-        ? `https://2embed.cc/embedtv/${tmdbId}&s=${season ?? 1}&e=${episode ?? 1}`
-        : `https://2embed.cc/embed/${tmdbId}`;
-    },
-  },
+  // VidFast 403s iframe document navigations and 2Embed shows a "content is
+  // blocked" notice when framed — both refuse embedding, so they're disabled.
+  // Re-enable if they change.
+  // {
+  //   id: "vidfast",
+  //   label: "VidFast",
+  //   buildUrl: ({ tmdbId, mediaType, season, episode }) =>
+  //     mediaType === "tv"
+  //       ? `https://vidfast.pro/tv/${tmdbId}/${season ?? 1}/${episode ?? 1}`
+  //       : `https://vidfast.pro/movie/${tmdbId}`,
+  // },
+  // {
+  //   id: "2embed",
+  //   label: "2Embed",
+  //   buildUrl: ({ tmdbId, mediaType, season, episode }) =>
+  //     mediaType === "tv"
+  //       ? `https://2embed.cc/embedtv/${tmdbId}&s=${season ?? 1}&e=${episode ?? 1}`
+  //       : `https://2embed.cc/embed/${tmdbId}`,
+  // },
 ];
 
 export function providerById(id) {
