@@ -104,11 +104,19 @@ export default function EmbedPlayer({ title, season, episode, cinesrc, onProgres
           </div>
         )}
         {status === "error" && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black/95 text-center">
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black/95 px-6 text-center">
             <p className="text-lg text-neutral-200">Stream unavailable</p>
-            <p className="max-w-sm text-sm text-neutral-500">
-              Try another server below, or retry.
-            </p>
+            {reporting ? (
+              <p className="max-w-md text-sm text-neutral-400">
+                CineSrc found no working source. Use the <strong>Choose server</strong> button
+                inside this player to pick one of its servers for this title, or switch to
+                VidLink below.
+              </p>
+            ) : (
+              <p className="max-w-md text-sm text-neutral-400">
+                Switch server below, or retry.
+              </p>
+            )}
             <button
               onClick={retry}
               className="rounded bg-brand px-5 py-2 text-sm font-semibold hover:bg-brand-hover"
