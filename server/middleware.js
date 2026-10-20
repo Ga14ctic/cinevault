@@ -69,7 +69,6 @@ export const loginLimiter = rateLimit({
   limit: 5,
   standardHeaders: true,
   legacyHeaders: false,
-  ipv6Subnet: 56,
   keyGenerator: (req) => {
     const user = String(req.body?.username || "").trim().toLowerCase();
     return `${user}|${req.ip}`;
