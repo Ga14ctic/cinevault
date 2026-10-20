@@ -9,6 +9,7 @@ import { logger } from "./logger.js";
 import { col } from "./db.js";
 import { loadSession } from "./middleware.js";
 import authRoutes from "./routes/auth.js";
+import libraryRoutes from "./routes/library.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const distDir = path.resolve(__dirname, "../client/dist");
@@ -70,6 +71,13 @@ export function createApp() {
   });
 
   app.use("/api/auth", authRoutes);
+  app.use("/api", libraryRoutes);
+
+  app.use("/images", express.static(path.join(__dirname, "../data/images"), {
+    maxAge: "30d",
+    immutable: true,
+    fallthrough: true,
+  }));
 
   app.use("/media", (req, res, next) => {
     if (!req.session) return res.status(401).json({ error: { code: "UNAUTHORIZED", message: "Login required" } });

@@ -69,6 +69,7 @@ export const loginLimiter = rateLimit({
   limit: 5,
   standardHeaders: true,
   legacyHeaders: false,
+  ipv6Subnet: 56,
   keyGenerator: (req) => {
     const user = String(req.body?.username || "").trim().toLowerCase();
     return `${user}|${req.ip}`;
@@ -76,4 +77,5 @@ export const loginLimiter = rateLimit({
   message: { error: { code: "RATE_LIMITED", message: "Too many login attempts. Try again in 15 minutes." } },
   statusCode: 429,
   skipSuccessfulRequests: true,
+  validate: { keyGeneratorIpFallback: false },
 });
